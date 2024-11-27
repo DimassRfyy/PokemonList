@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useState } from "react";
 
 function Pokemon() {
@@ -6,13 +6,18 @@ function Pokemon() {
 const [pokemon, setPokemon] = useState([]);
 const [selectedPokemon, setSelectedPokemon] = useState(false);
 const [detail, setDetail] = useState([]);
+const [prevUrl, setPrevUrl] = useState('');
+const [nextUrl, setNextUrl] = useState('');
+const [url, setUrl] = useState('https://pokeapi.co/api/v2/pokemon');
 
-async function fetchPokemon() {
-    const url = 'https://pokeapi.co/api/v2/pokemon';
+const fetchPokemon = useCallback(async () => {
     const resData = await fetch(url);
     const data = await resData.json();
 
-    let pokemon = await Promise.all(
+    setPrevUrl(data.previous || '');
+    setNextUrl(data.next || '');
+
+    let pokemonDetails = await Promise.all(
         data.results.map(async (item) => {
             const resDataDetails = await fetch(item.url);
             const dataDetails = await resDataDetails.json();
@@ -20,8 +25,8 @@ async function fetchPokemon() {
         })
     );
 
-    setPokemon(pokemon);
-}
+    setPokemon(pokemonDetails);
+}, [url]);
 
  function pokemonDetails() {
       return (<div className="detail" onClick={()=>{setSelectedPokemon(false)}}>
@@ -42,9 +47,9 @@ async function fetchPokemon() {
       </div>);
     }
 
-useEffect(() => {
-    fetchPokemon();
-}, []);
+  useEffect(() => {
+      fetchPokemon();
+  }, [fetchPokemon]);
 
   return (
     <div className="wrapper">
@@ -62,6 +67,20 @@ useEffect(() => {
                 );
             })}
         </div>
+        {
+          prevUrl && (
+            <div className="pagination-left">
+              <button onClick={() => {setUrl(prevUrl)}}>&laquo;</button>
+            </div>
+          )
+        }
+        {
+          nextUrl && (
+            <div className="pagination-right">
+              <button onClick={() => {setUrl(nextUrl)}}>&raquo;</button>
+            </div>
+          )
+        }
       </div>
     </div>
   )
